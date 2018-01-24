@@ -15,4 +15,4 @@ default['couchbase']['replicas'] = '1'
 default['couchbase']['source_url'] = "ftp://10.10.10.10/mirror/couchbase-server-enterprise-3.0.1-centos6.x86_64.rpm"
 #default['couchbase']['source_url'] = "https://s3-eu-west-1.amazonaws.com/atex-artifact-store/couchbase-server-enterprise-3.0.1-centos6.x86_64.rpm"
 default['couchbase']['install_dir'] = '/srv/couchbase'
-default['couchbase']['ftp_active_mode'] = false
+default['couchbase']['ftp_active_mode'] = true
