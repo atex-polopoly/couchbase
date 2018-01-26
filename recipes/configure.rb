@@ -78,12 +78,3 @@ execute 'update bucket ram' do
   not_if { `/opt/couchbase/bin/couchbase-cli bucket-list -p #{cluster_password} -u #{cluster_admin} -c #{host_name} | grep ramQuota | awk '{print $2}'`.gsub("\n","").to_i / 1024 / 1024 == ram_size.to_i }
 end
 
-
-
-# # execute 'set-password' do
-# #   command "/opt/couchbase/bin/couchbase-cli cluster-init --password=#{password} -c 127.0.0.1"
-# # end
-# /opt/couchbase/bin/couchbase-cli cluster-init --password=hejhej --user=hejhej -c 127.0.0.1
-
-# /opt/couchbase/bin/couchbase-cli cluster-init-ramsize --password=hejhej --user=hejhej -c 127.0.0.1
-# /opt/couchbase/bin/couchbase-cli cluster-init --password=password --user=Administrator -c 127.0.0.1

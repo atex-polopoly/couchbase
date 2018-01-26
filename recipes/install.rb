@@ -47,15 +47,15 @@ end
 
 download = remote_file "srv/couchbase/couchbase.rpm" do
   source source_url
-  ftp_active_mode false
+  ftp_active_mode node['couchbase']['ftp_active_mode']
   not_if "rpm -qa | grep -q 'couchbase'"
 end
 
 rpm_package 'couchbase' do
-  source 'srv/couchbase/couchbase.rpm'
+  source '/srv/couchbase/couchbase.rpm'
   not_if "rpm -qa | grep -q 'couchbase'"
 end
 
-file 'srv/couchbase/couchbase.rpm' do 
+file '/srv/couchbase/couchbase.rpm' do 
   action :delete
 end
