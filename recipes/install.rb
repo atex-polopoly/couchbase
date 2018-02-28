@@ -22,7 +22,7 @@ end
 directory 'srv/couchbase' do
   owner user
   group group
-  mode '0774'
+  mode '0755'
 end
 
 directory '/etc/tuned/no_thp_profile/' do
@@ -45,17 +45,19 @@ execute 'disable-transparent-huge-pagest' do
 end
 
 
-download = remote_file "srv/couchbase/couchbase.rpm" do
-  source source_url
+download = remote_file "srv/couchbase/couchbase.rpm" do 
+  source "ftp://10.10.10.10/mirror/couchbase-server-community-#{couchbase_verison}-centos6.x86_64.rpm"
   ftp_active_mode node['couchbase']['ftp_active_mode']
   not_if "rpm -qa | grep -q 'couchbase'"
 end
 
+ 
 rpm_package 'couchbase' do
   source '/srv/couchbase/couchbase.rpm'
+  options '--relocate /opt/couchbase=/srv/couchbase'
   not_if "rpm -qa | grep -q 'couchbase'"
 end
 
 file '/srv/couchbase/couchbase.rpm' do 
   action :delete
-end
+end 

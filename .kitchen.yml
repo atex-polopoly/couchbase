@@ -1,11 +1,8 @@
 ---
 driver:
   name: vagrant
-  #vagrantfiles:
-  #  - .VagrantfileNetwork.rb
   network:
     - ["forwarded_port", {guest: 8091, host: 8091}]
-
 
 provisioner:
   name: chef_zero
@@ -22,12 +19,22 @@ platforms:
 
 suites:
   - name: default
+    data_bags_path: "test/integration/default/data_bags"
+    encrypted_data_bag_secret_key_path: "test/integration/default/encrypted_data_bag_secret"
     run_list:
-      #- recipe[couchbase::default]
       - recipe[couchbase::default]
     verifier:
       inspec_tests:
-        - test/default
-    attributes: {
-      ftp_active_mode: false
-    }
+        - test/recipes
+    attributes: 
+      couchbase:
+        ftp_active_mode: false
+        vault: 'database-credentials'
+        vault-item: 'testcustomer-stage'
+        vault-item-key: 'couchbase'
+        #test data:
+        #user: cmuser
+        #pass: cmpasswd
+
+
+

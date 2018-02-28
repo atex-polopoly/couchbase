@@ -39,16 +39,16 @@ describe directory('/srv/couchbase') do
   it { should exist }
   it { should be_owned_by 'couchbase' }
   it { should be_grouped_into 'couchbase' }
-  its('mode') { should cmp '0774' }
+  its('mode') { should cmp '0755' }
 end
 
 describe file('/srv/couchbase/couchbase.rpm') do
   it { should_not exist }
 end
 
-describe file('/opt/couchbase/bin/couchbase-cli') do
+describe file('/srv/couchbase/bin/couchbase-cli') do
   it { should exist }
-  it { should be_owned_by 'bin' }
-  it { should be_grouped_into 'bin' }
+  it { should be_owned_by 'couchbase' }
+  it { should be_grouped_into 'couchbase' }
   it { should be_executable }
 end
