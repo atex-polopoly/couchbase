@@ -16,10 +16,10 @@ group = node['couchbase']['group']
 
 
 
-vault = chef_vault_item(node['couchbase']['vault'], node['couchbase']['vault-item'])
-vault_item_key = node['couchbase']['vault-item-key']
-cluster_admin = vault[vault_item_key]['user']
-cluster_password = vault[vault_item_key]['password']
+vault = chef_vault_item('couchbase-users', node.chef_environment)
+
+cluster_admin = vault['username']
+cluster_password = vault['password']
 cli = '/srv/couchbase/bin/couchbase-cli'
 
 credetials = "-p #{cluster_password} -u #{cluster_admin} -c #{host_name}"
@@ -83,4 +83,3 @@ execute 'update bucket ram' do
   only_if { `#{cli} bucket-list #{credetials} | grep #{bucket_name}`.gsub("\n","") == bucket_name }
   not_if { `#{cli} bucket-list #{credetials} | grep ramQuota | awk '{print $2}'`.gsub("\n","").to_i / 1024 / 1024 == ram_size.to_i }
 end
-

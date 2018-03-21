@@ -14,7 +14,3 @@ default['couchbase']['replicas'] = '1'
 default['couchbase']['verison'] = '4.5.1'
 default['couchbase']['install_dir'] = '/srv/couchbase'
 default['couchbase']['ftp_active_mode'] = true
-
-default['couchbase']['vault'] = ''
-default['couchbase']['vault-item'] = ''
-default['couchbase']['vault-item-key'] = ''
