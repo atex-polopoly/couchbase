@@ -1,26 +1,53 @@
 ---
 driver:
-  name: vagrant
+  # name: vagrant
+
+  name: ec2
   network:
-    - ["forwarded_port", {guest: 8091, host: 8091}]
+    - ["forwarded_port", {guest: 8093, host: 8093}]
+    - ["forwarded_port", {guest: 8091, host: 8091}] 
+  aws_ssh_key_id: aws_kitchen
+  security_group_ids:
+    - sg-ede0f094
+  region: eu-west-1
+  require_chef_omnibus: true
+  instance_type: t2.medium
+  vpc_mode: true
+  vpc_id: vpc-d9c517be
+  subnet_id: subnet-aa16c9e3
+  tags:
+    Group: atx
+    Environment: kitchen
+    Name: couchbase.kitchen.atx
+  user_data: scripts/user_data.sh
+
+
+transport:
+  ssh_key: keys/aws_kitchen.pem
+  connection_timeout: 10
+  connection_retries: 5
+  username: ec2-user
 
 provisioner:
   name: chef_zero
-  # You may wish to disable always updating cookbooks in CI or other testing environments.
-  # For example:
-  #   always_update_cookbooks: <%= !ENV['CI'] %>
-  #always_update_cookbooks: true
+  environments_path: test/environments
+  client_rb:
+    environment: testcustomer-stage
+  always_update_cookbooks: true
+
+
 
 verifier:
   name: inspec
 
 platforms:
-  - name: centos-7.3
+  - name: rhel-7.3
 
 suites:
   - name: default
     data_bags_path: "test/integration/default/data_bags"
     encrypted_data_bag_secret_key_path: "test/integration/default/encrypted_data_bag_secret"
+
     run_list:
       - recipe[couchbase::default]
     verifier:
@@ -28,13 +55,14 @@ suites:
         - test/recipes
     attributes: 
       couchbase:
-        ftp_active_mode: false
-        vault: 'database-credentials'
-        vault-item: 'testcustomer-stage'
-        vault-item-key: 'couchbase'
-        #test data:
-        #user: cmuser
-        #pass: cmpasswd
+        ftp_active_mode: true
+        vault: 'couchbase-users'
 
-
+## Vault item
+# {
+#   "id": "testcustomer-stage",
+# "bucket_password": "cmpasswd",
+# "password": "cmpasswd",
+# "username": "cmuser"
+# }
 

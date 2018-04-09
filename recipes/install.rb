@@ -54,7 +54,7 @@ end
  
 rpm_package 'couchbase' do
   source '/srv/couchbase/couchbase.rpm'
-  options '--relocate /opt/couchbase=/srv/couchbase'
+  #options '--relocate /opt/couchbase=/srv/couchbase'
   not_if "rpm -qa | grep -q 'couchbase'"
 end
 

@@ -1,0 +1,24 @@
+{
+    "id": "testcustomer-stage",
+    "bucket_password": {
+        "encrypted_data": "eLSkWH98obfX25F6hFfujnYNrC3vnVZQyDrg\n",
+        "iv": "PkmOlHGTogc2ZBWa\n",
+        "auth_tag": "DGIW88Zet1en/6dOPJ8R7g==\n",
+        "version": 3,
+        "cipher": "aes-256-gcm"
+    },
+    "password": {
+        "encrypted_data": "lJY3sb4cGOf4fvs2ieftsfFGoZP21zgp5rxI\n",
+        "iv": "eb5e3aDA8MxmUvUx\n",
+        "auth_tag": "dXL+0yoEUrDulrF6lDiEXA==\n",
+        "version": 3,
+        "cipher": "aes-256-gcm"
+    },
+    "username": {
+        "encrypted_data": "XTDQzzkDfMUPpEcV2qL0ANuArHvVJJseXw==\n",
+        "iv": "NIU1ptZ1oziMGNYG\n",
+        "auth_tag": "KkY4/Q00LvJq0hNw/koOqw==\n",
+        "version": 3,
+        "cipher": "aes-256-gcm"
+    }
+}
