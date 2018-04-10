@@ -19,9 +19,9 @@ vault = chef_vault_item(node['couchbase']['vault'], node.chef_environment)
 
 cli = "#{install_dir}/bin/couchbase-cli"
 
-cluster_admin = vault['username']
-cluster_password = vault['password']
-bucket_password = vault['bucket_password']
+cluster_admin = "'#{vault['username']}'"
+cluster_password = "'#{vault['password']}'"
+bucket_password = "'#{vault['bucket_password']}'"
 
 
 credetials = "-p #{cluster_password} -u #{cluster_admin}"
@@ -87,7 +87,7 @@ end
 couchbase_cli_command 'create bucket' do
   cluster_admin cluster_admin
   cluster_password cluster_password
-  cli_command "bucket-create --bucket #{bucket_name} --bucket-type couchbase --bucket-ramsize #{bucket_ram_size} --bucket-password=#{bucket_password}"
+  cli_command "bucket-create --bucket #{bucket_name} --bucket-type couchbase --bucket-ramsize #{bucket_ram_size} --bucket-password #{bucket_password}"
   not_if { `#{cli} bucket-list #{credetials} -c #{host_name}:#{port} | grep #{bucket_name}`.gsub("\n","") == bucket_name }
 end
 
@@ -104,6 +104,6 @@ couchbase_cli_command 'update bucket password' do
   cluster_password cluster_password
   cli_command "bucket-edit --bucket #{bucket_name} --bucket-password #{bucket_password}"
   only_if { `#{cli} bucket-list #{credetials} -c #{host_name}:#{port} | grep #{bucket_name}`.gsub("\n","") == bucket_name }
-  not_if { `#{cli} bucket-list #{credetials} -c #{host_name} | grep saslPassword | awk '{print $2}'`.gsub("\n","") == bucket_password }
+  not_if { `#{cli} bucket-list #{credetials} -c #{host_name} | grep saslPassword | awk '{print $2}'`.gsub("\n","") == bucket_password[1...-1] }
 end
 
