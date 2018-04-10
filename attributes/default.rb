@@ -15,5 +15,5 @@ default['couchbase']['port'] = '8091'
 default['couchbase']['replicas'] = '1'
 default['couchbase']['verison'] = '4.5.1'
 default['couchbase']['install_dir'] = '/opt/couchbase'
-default['couchbase']['ftp_active_mode'] = false
+default['couchbase']['ftp_active_mode'] = true
 

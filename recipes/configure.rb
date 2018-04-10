@@ -1,4 +1,5 @@
 include_recipe 'jq::default'
+include_recipe 'chef-vault'
 
 host_name = node['couchbase']['host_name']
 port = node['couchbase']['port']
@@ -42,7 +43,6 @@ couchbase_cli_command 'node init set data path' do
   cluster_admin cluster_admin
   cluster_password cluster_password
   retries 10
-  retry_delay 2
   cli_command "node-init --node-init-data-path=#{install_dir}#{data_path}"
   not_if { `#{cli} server-info #{credetials} -c #{host_name} | /srv/jq --raw-output .storage.hdd[0].path`.gsub("\n","") == "#{install_dir}#{data_path}" }
 end

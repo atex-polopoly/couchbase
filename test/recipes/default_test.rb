@@ -46,7 +46,7 @@ describe file('/srv/couchbase/couchbase.rpm') do
   it { should_not exist }
 end
 
-describe file('/srv/couchbase/bin/couchbase-cli') do
+describe file('/opt/couchbase/bin/couchbase-cli') do
   it { should exist }
   it { should be_owned_by 'couchbase' }
   it { should be_grouped_into 'couchbase' }
