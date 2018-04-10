@@ -26,33 +26,39 @@ bucket_password = "'#{vault['bucket_password']}'"
 
 credetials = "-p #{cluster_password} -u #{cluster_admin}"
 
-directory "#{install_dir}#{data_path}" do
+directory "#{data_path}" do
   owner user
   group group
   mode '0774'
+  recursive true
 end
 
-
-directory "#{install_dir}#{index_path}" do
+directory "#{index_path}" do
   owner user
   group group
   mode '0774'
+  recursive true
+end
+
+execute 'custom ports' do
+  command "echo '{adminPort, 9106}.' >> /opt/couchbase/etc/couchbase/static_config"
+  not_if "grep '{adminPort, 9106}.' /opt/couchbase/etc/couchbase/static_config"
 end
 
 couchbase_cli_command 'node init set data path' do
   cluster_admin cluster_admin
   cluster_password cluster_password
   retries 10
-  cli_command "node-init --node-init-data-path=#{install_dir}#{data_path}"
-  not_if { `#{cli} server-info #{credetials} -c #{host_name} | /srv/jq --raw-output .storage.hdd[0].path`.gsub("\n","") == "#{install_dir}#{data_path}" }
+  cli_command "node-init --node-init-data-path=#{data_path}"
+  not_if { `#{cli} server-info #{credetials} -c #{host_name} | /srv/jq --raw-output .storage.hdd[0].path`.gsub("\n","") == data_path }
 end
 
 
 couchbase_cli_command 'node init set index path' do
   cluster_admin cluster_admin
   cluster_password cluster_password
-  cli_command "node-init  --node-init-index-path=#{install_dir}#{index_path}"
-  not_if { `#{cli} server-info #{credetials} -c #{host_name} | /srv/jq --raw-output .storage.hdd[0].index_path`.gsub("\n","") == "#{install_dir}#{index_path}" }
+  cli_command "node-init  --node-init-index-path=#{index_path}"
+  not_if { `#{cli} server-info #{credetials} -c #{host_name} | /srv/jq --raw-output .storage.hdd[0].index_path`.gsub("\n","") == index_path }
 end
 
 

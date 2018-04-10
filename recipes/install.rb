@@ -19,10 +19,20 @@ user user do
   group group
 end
 
-directory 'srv/couchbase' do
+directory '/srv/couchbase' do
   owner user
   group group
   mode '0755'
+end
+
+directory '/opt/couchbase' do
+  owner user
+  group group
+  mode '0755'
+end
+
+link '/opt/couchbase/*' do
+  to '/srv/couchbase'
 end
 
 directory '/etc/tuned/no_thp_profile/' do
