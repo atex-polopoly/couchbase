@@ -15,16 +15,18 @@ bucket_ram_size = node['couchbase']['bucket_ram_size']
 user = node['couchbase']['user']
 group = node['couchbase']['group']
 
-vault = chef_vault_item(node['couchbase']['vault'], node.chef_environment)
+admin_vault_item = chef_vault_item(node['couchbase']['vault'], "#{node.chef_environment}-admin")
+bucket_vault_item = chef_vault_item(node['couchbase']['vault'], "#{node.chef_environment}-bucket")
+
 
 cli = "#{install_dir}/bin/couchbase-cli"
 
-cluster_admin = "'#{vault['username']}'"
-cluster_password = "'#{vault['password']}'"
-bucket_password = "'#{vault['bucket_password']}'"
+cluster_admin = "#{admin_vault_item['admin_username']}"
+cluster_password = "#{admin_vault_item['admin_password']}"
+bucket_password = "#{bucket_vault_item['bucket_password']}"
 
 
-credetials = "-p #{cluster_password} -u #{cluster_admin}"
+credetials = "-p '#{cluster_password}' -u '#{cluster_admin}'"
 
 directory "#{data_path}" do
   owner user
@@ -40,9 +42,26 @@ directory "#{index_path}" do
   recursive true
 end
 
-execute 'custom ports' do
-  command "echo '{adminPort, 9106}.' >> /opt/couchbase/etc/couchbase/static_config"
-  not_if "grep '{adminPort, 9106}.' /opt/couchbase/etc/couchbase/static_config"
+service "couchbase-server" do
+  action :stop
+  not_if "grep '{indexer_admin_port, 9106}.' /opt/couchbase/etc/couchbase/static_config"
+  only_if {File.exist? '/opt/couchbase/etc/couchbase/static_config' }
+end
+
+file '/opt/couchbase/var/lib/couchbase/config/config.dat' do
+  action :delete
+  not_if "grep '{indexer_admin_port, 9106}.' /opt/couchbase/etc/couchbase/static_config"
+  only_if {File.exist? '/opt/couchbase/etc/couchbase/static_config' }
+end
+
+execute 'custom indexer admin port' do
+  command "echo '{indexer_admin_port, 9106}.' >> /opt/couchbase/etc/couchbase/static_config"
+  not_if "grep '{indexer_admin_port, 9106}.' /opt/couchbase/etc/couchbase/static_config"
+  only_if {File.exist? '/opt/couchbase/etc/couchbase/static_config' }
+end
+
+service "couchbase-server" do
+  action :start
 end
 
 couchbase_cli_command 'node init set data path' do
@@ -93,8 +112,8 @@ end
 couchbase_cli_command 'create bucket' do
   cluster_admin cluster_admin
   cluster_password cluster_password
-  cli_command "bucket-create --bucket #{bucket_name} --bucket-type couchbase --bucket-ramsize #{bucket_ram_size} --bucket-password #{bucket_password}"
-  not_if { `#{cli} bucket-list #{credetials} -c #{host_name}:#{port} | grep #{bucket_name}`.gsub("\n","") == bucket_name }
+  cli_command "bucket-create --bucket #{bucket_name} --bucket-type couchbase --bucket-ramsize #{bucket_ram_size} --bucket-password '#{bucket_password}'"
+  not_if { `#{cli} bucket-list #{credetials} -c #{host_name}:#{port} | grep -m1 #{bucket_name}`.gsub("\n","") == bucket_name }
 end
 
 couchbase_cli_command 'update bucket ram' do
@@ -108,8 +127,7 @@ end
 couchbase_cli_command 'update bucket password' do
   cluster_admin cluster_admin
   cluster_password cluster_password
-  cli_command "bucket-edit --bucket #{bucket_name} --bucket-password #{bucket_password}"
+  cli_command "bucket-edit --bucket #{bucket_name} --bucket-password '#{bucket_password}'"
   only_if { `#{cli} bucket-list #{credetials} -c #{host_name}:#{port} | grep #{bucket_name}`.gsub("\n","") == bucket_name }
-  not_if { `#{cli} bucket-list #{credetials} -c #{host_name} | grep saslPassword | awk '{print $2}'`.gsub("\n","") == bucket_password[1...-1] }
+  not_if { `#{cli} bucket-list #{credetials} -c #{host_name} | grep saslPassword | awk '{print $2}'`.gsub("\n","") == bucket_password }
 end
-
