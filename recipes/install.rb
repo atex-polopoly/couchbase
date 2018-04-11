@@ -19,10 +19,23 @@ user user do
   group group
 end
 
-directory 'srv/couchbase' do
+directory '/srv/couchbase' do
   owner user
   group group
   mode '0755'
+end
+
+directory '/opt/couchbase' do
+  owner user
+  group group
+  mode '0755'
+end
+
+mount '/opt/couchbase' do
+  device '/srv/couchbase'
+  options 'bind'
+  action :mount
+  not_if "[[ $(ls -id /srv/couchbase/ | awk '{print $1}') == $(ls -id /opt/couchbase/ | awk '{print $1}') ]]"
 end
 
 directory '/etc/tuned/no_thp_profile/' do
@@ -54,7 +67,6 @@ end
  
 rpm_package 'couchbase' do
   source '/srv/couchbase/couchbase.rpm'
-  #options '--relocate /opt/couchbase=/srv/couchbase'
   not_if "rpm -qa | grep -q 'couchbase'"
 end
 

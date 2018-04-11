@@ -1,0 +1,10 @@
+{
+    "id": "testcustomer-stage-bucket",
+    "bucket_password": {
+        "encrypted_data": "zGcmpv3vXc0s4OVt0eCdahJpJnWJLmiv+U1/ZH9ggrOj\n",
+        "iv": "h3a2EWex5onLZ23U\n",
+        "auth_tag": "GUEHabGMVd5z5+6850HgHw==\n",
+        "version": 3,
+        "cipher": "aes-256-gcm"
+    }
+}

@@ -1,0 +1,17 @@
+{
+    "id": "testcustomer-stage-admin",
+    "admin_password": {
+        "encrypted_data": "4iAJzZRvDM7gIn44xf4CNrVy6zLy48sWfe4X\n",
+        "iv": "Qi1BIfYwp9DlM1ns\n",
+        "auth_tag": "mCavPU6h/NfgDxu7OiGBuQ==\n",
+        "version": 3,
+        "cipher": "aes-256-gcm"
+    },
+    "admin_username": {
+        "encrypted_data": "fBJ2W4168gOJrKDoYDuri8UrTQGBAt9fCA==\n",
+        "iv": "MfP/HN+xCnM1OfMn\n",
+        "auth_tag": "yyMquwVFU653bD48hLVHHQ==\n",
+        "version": 3,
+        "cipher": "aes-256-gcm"
+    }
+}
