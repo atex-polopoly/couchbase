@@ -52,9 +52,8 @@ cookbook_file '/etc/tuned/no_thp_profile/tuned.conf' do
 end
 
 execute 'disable-transparent-huge-pagest' do
-  run = %x( if [[ $(cat /sys/kernel/mm/transparent_hugepage/enabled) != 'always madvise [never]' ]] ; then echo 'run' ; fi; ).gsub("\n","") == "run"
   command "tuned-adm profile no_thp_profile"
-  only_if { run }
+  not_if { File.read('/sys/kernel/mm/transparent_hugepage/enabled') == "always madvise [never]\n" }
 end
 
 
