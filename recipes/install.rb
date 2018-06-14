@@ -7,10 +7,10 @@
 yum_package 'pkgconfig'
 yum_package 'openssl098e'
 
-user = node['couchbase']['user']
-group = node['couchbase']['group']
-couchbase_verison = node['couchbase']['verison']
-source_url = node['couchbase']['source_url']
+user = attribute String, 'couchbase', 'user'
+group =  attribute String, 'couchbase', 'group'
+couchbase_version =  attribute String, 'couchbase', 'version'
+source_url =  attribute String, 'couchbase', 'source_url'
 
 
 group group

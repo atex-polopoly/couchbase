@@ -11,9 +11,9 @@ default['couchbase']['cluster_ram_size'] = 500
 default['couchbase']['fts_ram_size'] = 256
 default['couchbase']['index_ram_size'] = 256
 default['couchbase']['bucket_ram_size'] = 300
-default['couchbase']['port'] = '8091'
+default['couchbase']['port'] = 8091
 default['couchbase']['replicas'] = '1'
-default['couchbase']['verison'] = '4.5.1'
+default['couchbase']['version'] = '4.5.1'
 default['couchbase']['install_dir'] = '/opt/couchbase'
 default['couchbase']['ftp_active_mode'] = true
 

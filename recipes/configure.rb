@@ -2,21 +2,23 @@ require 'json'
 
 include_recipe 'chef-vault'
 
-port = node['couchbase']['port']
-install_dir = node['couchbase']['install_dir']
-bucket_name  = node['couchbase']['bucket_name']
-data_path = node['couchbase']['data_path']
-index_path = node['couchbase']['index_path']
-cluster_ram_size = node['couchbase']['cluster_ram_size']
-index_ram_size = node['couchbase']['index_ram_size']
-fts_ram_size = node['couchbase']['fts_ram_size']
-bucket_ram_size = node['couchbase']['bucket_ram_size']
+port = attribute Integer, 'couchbase', 'port'
+install_dir = attribute String, 'couchbase', 'install_dir'
+bucket_name = attribute String, 'couchbase', 'bucket_name'
+data_path = attribute String,  'couchbase', 'data_path'
+index_path = attribute String, 'couchbase', 'index_path'
+cluster_ram_size = attribute Integer, 'couchbase', 'cluster_ram_size'
+index_ram_size = attribute Integer, 'couchbase', 'index_ram_size'
+fts_ram_size = attribute Integer, 'couchbase', 'fts_ram_size'
+bucket_ram_size = attribute Integer, 'couchbase', 'bucket_ram_size'
 
-user = node['couchbase']['user']
-group = node['couchbase']['group']
+user = attribute String, 'couchbase', 'user'
+group =  attribute String, 'couchbase', 'group'
 
-admin_vault_item = chef_vault_item(node['couchbase']['vault'], "#{node.chef_environment}-admin")
-bucket_vault_item = chef_vault_item(node['couchbase']['vault'], "#{node.chef_environment}-bucket")
+vault = attribute String,  'couchbase', 'vault'
+
+admin_vault_item = chef_vault_item(vault, "#{node.chef_environment}-admin")
+bucket_vault_item = chef_vault_item(vault, "#{node.chef_environment}-bucket")
 
 admin_user = admin_vault_item['admin_username']
 admin_password = admin_vault_item['admin_password']
@@ -129,3 +131,4 @@ couchbase_cli_command 'update bucket password' do
   only_if { cli_json.call('bucket-list --output=json').one? { |bucket| bucket['name'] == bucket_name } }
   not_if { cli_json.call('bucket-list --output=json').find { |bucket| bucket['name'] == bucket_name }['saslPassword'] == bucket_password }
 end
+

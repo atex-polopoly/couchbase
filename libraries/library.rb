@@ -17,7 +17,19 @@ def run_command(command,
   host = "-c '#{host}'"
 
   command = "'#{bin}/#{executable}' #{command} #{credentials} #{host}"
+  Chef::Log.info(command)
   %x(#{command})
   #raise
 end
 
+
+def attribute(types, *path)
+  var = path.inject(node, :[])
+  types = Array(types) << NilClass
+  unless types.any? { |type| var.is_a? type }
+    e = TypeError.new "node#{path.map {|s| "[#{s}]" }.reduce(:+)} was of type #{var.class}, expected: #{types}"
+    e.set_backtrace caller
+    raise e
+  end
+  var
+end
