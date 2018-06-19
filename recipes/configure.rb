@@ -180,7 +180,7 @@ if slave
                .map { |arr| Hash[*arr] }
                .find { |hash| hash['streamid'].start_with? uuid }
 
-      replication.nil? || replication['source'] == master['bucket_name'] && replication['target'].end_with? master['bucket_name']
+      replication.nil? || replication['source'] == master['bucket_name'] && replication['target'].end_with?(master['bucket_name'])
     end
   end
 
