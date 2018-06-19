@@ -2,33 +2,31 @@
 
 default_action :execute
 property :cli_command, String, required: true, name_attribute: true
-property :host, String, default: '127.0.0.1'
-property :bin, String, default: "#{dig(node, 'couchbase', 'install_dir')}/bin"
-property :executable, String, default: 'couchbase-cli'
-property :port, Integer, default: 0
-property :cluster_admin, String
-property :cluster_password, String
-property :bucket_password, String
+property :host, String
+property :bin, String
+property :executable, String
+property :port, Integer
+property :admin_user, String
+property :admin_password, String
 
 action :execute do
-  cli_command      = new_resource.cli_command
-  bin              = new_resource.bin
-  executable       = new_resource.executable
-  cluster_admin    = new_resource.cluster_admin
-  cluster_password = new_resource.cluster_password
-  bucket_password  = new_resource.bucket_password
-  port             = new_resource.port
-  host             = new_resource.host
+  command = new_resource.cli_command
+  params = []
+  params << command
+  params << new_resource.admin_user
+  params << new_resource.admin_password
+  params << new_resource.host unless new_resource.host.nil?
+  params << new_resource.port unless new_resource.port.nil?
+  params << new_resource.bin unless new_resource.bin.nil?
+  params << new_resource.executable unless new_resource.executable.nil?
 
-  cluster_admin.to_s.empty? ? '' : credetials = "-p #{cluster_password} -u #{cluster_admin}"
-  port == 0 ? host = "-c #{host}" : host = "-c #{host}:#{port}" 
 
-  ruby_block "couchbase command" do
-    block do
-      puts "#{bin}/#{executable} #{cli_command} #{credetials} #{host}"
-      result = %x(#{bin}/#{executable} #{cli_command} #{credetials} #{host})
-      puts "command output: #{result}"
-      abort('ERROR!') if result.start_with? 'ERROR'
+  ruby_block 'run' do
+      block do
+      output = run_command(*params)
+      raise(output) if output.start_with? 'ERROR'
+      printf("\n%s", output)
     end
   end
+  new_resource.updated_by_last_action true
 end

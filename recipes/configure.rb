@@ -1,32 +1,33 @@
-include_recipe 'jq::default'
+require 'json'
+
 include_recipe 'chef-vault'
 
-host_name = node['couchbase']['host_name']
-port = node['couchbase']['port']
-install_dir = node['couchbase']['install_dir']
-bucket_name  = node['couchbase']['bucket_name']
-data_path = node['couchbase']['data_path']
-index_path = node['couchbase']['index_path']
-cluster_ram_size = node['couchbase']['cluster_ram_size']
-index_ram_size = node['couchbase']['index_ram_size']
-fts_ram_size = node['couchbase']['fts_ram_size']
-bucket_ram_size = node['couchbase']['bucket_ram_size']
+port = attribute Integer, 'couchbase', 'port'
+install_dir = attribute String, 'couchbase', 'install_dir'
+bucket_name = attribute String, 'couchbase', 'bucket_name'
+data_path = attribute String,  'couchbase', 'data_path'
+index_path = attribute String, 'couchbase', 'index_path'
+cluster_ram_size = attribute Integer, 'couchbase', 'cluster_ram_size'
+index_ram_size = attribute Integer, 'couchbase', 'index_ram_size'
+fts_ram_size = attribute Integer, 'couchbase', 'fts_ram_size'
+bucket_ram_size = attribute Integer, 'couchbase', 'bucket_ram_size'
+slave = attribute [TrueClass, FalseClass], 'couchbase', 'slave'
 
-user = node['couchbase']['user']
-group = node['couchbase']['group']
+user = attribute String, 'couchbase', 'user'
+group =  attribute String, 'couchbase', 'group'
 
-admin_vault_item = chef_vault_item(node['couchbase']['vault'], "#{node.chef_environment}-admin")
-bucket_vault_item = chef_vault_item(node['couchbase']['vault'], "#{node.chef_environment}-bucket")
+vault = attribute String,  'couchbase', 'vault'
 
+admin_vault_item = chef_vault_item(vault, "#{node.chef_environment}-admin")
+bucket_vault_item = chef_vault_item(vault, "#{node.chef_environment}-bucket")
 
-cli = "#{install_dir}/bin/couchbase-cli"
+admin_user = admin_vault_item['admin_username']
+admin_password = admin_vault_item['admin_password']
+bucket_password = bucket_vault_item['bucket_password']
 
-cluster_admin = "#{admin_vault_item['admin_username']}"
-cluster_password = "#{admin_vault_item['admin_password']}"
-bucket_password = "#{bucket_vault_item['bucket_password']}"
-
-
-credetials = "-p '#{cluster_password}' -u '#{cluster_admin}'"
+cli = Proc.new { |comm| run_command(comm, admin_user, admin_password) }
+cli_json = Proc.new { |comm| JSON.parse(cli.call comm) }
+cli_arr = Proc.new { |comm| cli.call(comm).split "\n" }
 
 directory "#{data_path}" do
   owner user
@@ -65,69 +66,147 @@ service "couchbase-server" do
 end
 
 couchbase_cli_command 'node init set data path' do
-  cluster_admin cluster_admin
-  cluster_password cluster_password
+  admin_user admin_user
+  admin_password admin_password
   retries 10
   cli_command "node-init --node-init-data-path=#{data_path}"
+<<<<<<< HEAD
+  not_if { cli_json.call('server-info')['storage']['hdd'][0]['path'] == data_path }
+=======
   not_if { `#{cli} server-info #{credetials} -c #{host_name} | /srv/jq --raw-output .storage.hdd[0].path`.gsub("\n","") == data_path }
+>>>>>>> master
 end
 
 
 couchbase_cli_command 'node init set index path' do
+<<<<<<< HEAD
+  admin_user admin_user
+  admin_password admin_password
+  cli_command "node-init  --node-init-index-path=#{index_path}"
+  not_if { cli_json.call('server-info')['storage']['hdd'][0]['index_path'] == index_path }
+=======
   cluster_admin cluster_admin
   cluster_password cluster_password
   cli_command "node-init  --node-init-index-path=#{index_path}"
   not_if { `#{cli} server-info #{credetials} -c #{host_name} | /srv/jq --raw-output .storage.hdd[0].index_path`.gsub("\n","") == index_path }
+>>>>>>> master
 end
 
 
 couchbase_cli_command 'cluster init' do
-  cluster_admin cluster_admin
-  cluster_password cluster_password
-  cli_command "cluster-init --cluster-ramsize #{cluster_ram_size} --cluster-index-ramsize #{index_ram_size} --cluster-fts-ramsize #{fts_ram_size} --services=data,index,query,fts "
-  not_if { `#{cli} server-list #{credetials} -c #{host_name} | grep 127.0.0.1 | awk '{print $3, $4}'`.gsub("\n","") == 'healthy active'  }
+  admin_user admin_user
+  admin_password admin_password
+  cli_command "cluster-init --cluster-ramsize #{cluster_ram_size} --cluster-index-ramsize #{index_ram_size} --cluster-fts-ramsize #{fts_ram_size} --services=data,index,query,fts"
+  not_if { cli_arr.call('server-list').find { |ln| ln.include? '127.0.0.1' }.end_with? 'healthy active' }
 end
 
 couchbase_cli_command 'update cluster ram' do
-  cluster_admin cluster_admin
-  cluster_password cluster_password
+  admin_user admin_user
+  admin_password admin_password
   cli_command "cluster-edit --cluster-ramsize #{cluster_ram_size}"
-  not_if { `#{cli} server-info #{credetials} -c #{host_name} | /srv/jq .memoryQuota`.gsub("\n","") == cluster_ram_size  }
+  not_if { cli_json.call('server-info')['memoryQuota'] == cluster_ram_size }
 end
 
 couchbase_cli_command 'set index ram' do
-  cluster_admin cluster_admin
-  cluster_password cluster_password
-  cli_command "cluster-edit --cluster-index-ramsize #{index_ram_size} "
-  not_if { `#{cli} server-info #{credetials} -c #{host_name} | /srv/jq .indexMemoryQuota`.gsub("\n","") == index_ram_size  }
+  admin_user admin_user
+  admin_password admin_password
+  cli_command "cluster-edit --cluster-index-ramsize #{index_ram_size}"
+  not_if { cli_json.call('server-info')['indexMemoryQuota'] == index_ram_size }
 end
 
 couchbase_cli_command 'set fts ram' do
-  cluster_admin cluster_admin
-  cluster_password cluster_password
-  cli_command "cluster-edit --cluster-fts-ramsize #{fts_ram_size} "
-  not_if { `#{cli} server-info #{credetials} -c #{host_name} | /srv/jq .ftsMemoryQuota`.gsub("\n","") == fts_ram_size  }
+  admin_user admin_user
+  admin_password admin_password
+  cli_command "cluster-edit --cluster-fts-ramsize #{fts_ram_size}"
+  not_if { cli_json.call('server-info')['ftsMemoryQuota'] == fts_ram_size }
 end
 
 couchbase_cli_command 'create bucket' do
-  cluster_admin cluster_admin
-  cluster_password cluster_password
+  admin_user admin_user
+  admin_password admin_password
   cli_command "bucket-create --bucket #{bucket_name} --bucket-type couchbase --bucket-ramsize #{bucket_ram_size} --bucket-password '#{bucket_password}'"
-  not_if { `#{cli} bucket-list #{credetials} -c #{host_name}:#{port} | grep -m1 #{bucket_name}`.gsub("\n","") == bucket_name }
+  not_if { cli_json.call('bucket-list --output=json').one? { |bucket| bucket['name'] == bucket_name } }
 end
 
 couchbase_cli_command 'update bucket ram' do
-  cluster_admin cluster_admin
-  cluster_password cluster_password
+  admin_user admin_user
+  admin_password admin_password
   cli_command "bucket-edit --bucket #{bucket_name} --bucket-ramsize #{bucket_ram_size}"
-  only_if { `#{cli} bucket-list #{credetials} -c #{host_name}:#{port} | grep #{bucket_name}`.gsub("\n","") == bucket_name }
-  not_if { `#{cli} bucket-list #{credetials} -c #{host_name}:#{port} | grep ramQuota | awk '{print $2}'`.gsub("\n","").to_i / 1024 / 1024 == bucket_ram_size.to_i }
+  only_if { cli_json.call('bucket-list --output=json').one? { |bucket| bucket['name'] == bucket_name } }
+  not_if { cli_json.call('bucket-list --output=json').find { |bucket| bucket['name'] == bucket_name }['quota']['ram'] / 1024 /1024 == bucket_ram_size }
 end
 
 couchbase_cli_command 'update bucket password' do
-  cluster_admin cluster_admin
-  cluster_password cluster_password
+  admin_user admin_user
+  admin_password admin_password
   cli_command "bucket-edit --bucket #{bucket_name} --bucket-password '#{bucket_password}'"
-  only_if { `#{cli} bucket-list #{credetials} -c #{host_name}:#{port} | grep #{bucket_name}`.gsub("\n","") == bucket_name }
-  not_if { `#{cli} bucket-list #{credetials} -c #{host_name} | grep saslPassword | awk '{print $2}'`.gsub("\n","") == bucket_password }
+  only_if { cli_json.call('bucket-list --output=json').one? { |bucket| bucket['name'] == bucket_name } }
+  not_if { cli_json.call('bucket-list --output=json').find { |bucket| bucket['name'] == bucket_name }['saslPassword'] == bucket_password }
+end
+
+if slave
+  master =
+    search(:node, "recipes:*couchbase\\:\\:install* AND chef_environment:#{node.chef_environment} AND NOT couchbase_slave:true",
+           :filter_result => {
+             'hostname' => ['ipaddress'],
+             'port' => ['couchbase', 'port'],
+             'bucket_name' => ['couchbase', 'bucket_name']
+           })
+      .first
+  raise if master.nil?
+
+  cluster_name = 'master'
+  hostname = "#{master['hostname']}:#{master['port']}"
+
+  couchbase_cli_command 'create remote cluster' do
+    admin_user admin_user
+    admin_password admin_password
+    cli_command "xdcr-setup --create --xdcr-cluster-name='#{cluster_name}' --xdcr-hostname='#{hostname}' --xdcr-username='#{admin_user}' --xdcr-password='#{admin_password}'"
+    not_if { cli_json.call('xdcr-setup --list --output=json').any? { |cluster| cluster['name'] == cluster_name } }
+  end
+
+  couchbase_cli_command 'edit existing remote cluster' do
+    admin_user admin_user
+    admin_password admin_password
+    cli_command "xdcr-setup --edit --xdcr-cluster-name='#{cluster_name}' --xdcr-hostname='#{hostname}' --xdcr-username='#{admin_user}' --xdcr-password='#{admin_password}'"
+    only_if { cli_json.call('xdcr-setup --list --output=json').any? { |cluster| cluster['name'] == cluster_name } }
+    not_if do
+      set = cli_json.call('xdcr-setup --list --output=json').find { |cluster| cluster['name'] == cluster_name }.select { |key, value| ['hostname', 'name'].include? key }
+      set == {'hostname' => hostname, 'name' => cluster_name}
+    end
+  end
+
+  couchbase_cli_command 'remove replication' do
+    admin_user admin_user
+    admin_password admin_password
+    cli_command "xdcr-replicate --create --xdcr-cluster-name='#{cluster_name}' --xdcr-from-bucket='#{master['bucket_name']}' --xdcr-to-bucket='#{bucket_name}'"
+    not_if do
+      uuid = cli_json.call('xdcr-setup --list --output=json').find { |cluster| cluster['name'] == cluster_name }['uuid']
+      replication =
+        cli_arr.call('xdcr-replicate --list')
+               .slice_before { |s| s.start_with? 'stream' }
+               .map { |arr| arr.map { |l| l.delete ' ' }.map { |l| l.split ':' }.flatten }
+               .map { |arr| Hash[*arr] }
+               .find { |hash| hash['streamid'].start_with? uuid }
+
+
+    end
+  end
+
+  couchbase_cli_command 'create replication' do
+    admin_user admin_user
+    admin_password admin_password
+    cli_command "xdcr-replicate --create --xdcr-cluster-name='#{cluster_name}' --xdcr-from-bucket='#{master['bucket_name']}' --xdcr-to-bucket='#{bucket_name}'"
+    not_if do
+      uuid = cli_json.call('xdcr-setup --list --output=json').find { |cluster| cluster['name'] == cluster_name }['uuid']
+      replication =
+        cli_arr.call('xdcr-replicate --list')
+               .slice_before { |s| s.start_with? 'stream' }
+               .map { |arr| arr.map { |l| l.delete ' ' }.map { |l| l.split ':' }.flatten }
+               .map { |arr| Hash[*arr] }
+               .find { |hash| hash['streamid'].start_with? uuid }
+
+      !replication.nil?
+    end
+  end
 end

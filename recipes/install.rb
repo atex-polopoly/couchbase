@@ -7,10 +7,10 @@
 yum_package 'pkgconfig'
 yum_package 'openssl098e'
 
-user = node['couchbase']['user']
-group = node['couchbase']['group']
-couchbase_version = node['couchbase']['version']
-source_url = node['couchbase']['source_url']
+user = attribute String, 'couchbase', 'user'
+group =  attribute String, 'couchbase', 'group'
+couchbase_version =  attribute String, 'couchbase', 'version'
+source_url =  attribute String, 'couchbase', 'source_url'
 
 
 group group
@@ -52,9 +52,8 @@ cookbook_file '/etc/tuned/no_thp_profile/tuned.conf' do
 end
 
 execute 'disable-transparent-huge-pagest' do
-  run = %x( if [[ $(cat /sys/kernel/mm/transparent_hugepage/enabled) != 'always madvise [never]' ]] ; then echo 'run' ; fi; ).gsub("\n","") == "run"
   command "tuned-adm profile no_thp_profile"
-  only_if { run }
+  not_if { File.read('/sys/kernel/mm/transparent_hugepage/enabled') == "always madvise [never]\n" }
 end
 
 
