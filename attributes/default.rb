@@ -16,4 +16,3 @@ default['couchbase']['replicas'] = '1'
 default['couchbase']['version'] = '4.5.1'
 default['couchbase']['install_dir'] = '/opt/couchbase'
 default['couchbase']['ftp_active_mode'] = true
-

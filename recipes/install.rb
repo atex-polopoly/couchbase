@@ -57,18 +57,18 @@ execute 'disable-transparent-huge-pagest' do
 end
 
 
-download = remote_file "srv/couchbase/couchbase.rpm" do 
-  source "ftp://10.10.10.10/mirror/couchbase-server-community-#{couchbase_verison}-centos6.x86_64.rpm"
+download = remote_file "srv/couchbase/couchbase.rpm" do
+  source "ftp://10.10.10.10/mirror/couchbase-server-community-#{couchbase_version}-centos6.x86_64.rpm"
   ftp_active_mode node['couchbase']['ftp_active_mode']
   not_if "rpm -qa | grep -q 'couchbase'"
 end
 
- 
+
 rpm_package 'couchbase' do
   source '/srv/couchbase/couchbase.rpm'
   not_if "rpm -qa | grep -q 'couchbase'"
 end
 
-file '/srv/couchbase/couchbase.rpm' do 
+file '/srv/couchbase/couchbase.rpm' do
   action :delete
-end 
+end
