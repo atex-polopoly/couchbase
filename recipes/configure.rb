@@ -70,26 +70,15 @@ couchbase_cli_command 'node init set data path' do
   admin_password admin_password
   retries 10
   cli_command "node-init --node-init-data-path=#{data_path}"
-<<<<<<< HEAD
   not_if { cli_json.call('server-info')['storage']['hdd'][0]['path'] == data_path }
-=======
-  not_if { `#{cli} server-info #{credetials} -c #{host_name} | /srv/jq --raw-output .storage.hdd[0].path`.gsub("\n","") == data_path }
->>>>>>> master
 end
 
 
 couchbase_cli_command 'node init set index path' do
-<<<<<<< HEAD
   admin_user admin_user
   admin_password admin_password
   cli_command "node-init  --node-init-index-path=#{index_path}"
   not_if { cli_json.call('server-info')['storage']['hdd'][0]['index_path'] == index_path }
-=======
-  cluster_admin cluster_admin
-  cluster_password cluster_password
-  cli_command "node-init  --node-init-index-path=#{index_path}"
-  not_if { `#{cli} server-info #{credetials} -c #{host_name} | /srv/jq --raw-output .storage.hdd[0].index_path`.gsub("\n","") == index_path }
->>>>>>> master
 end
 
 
