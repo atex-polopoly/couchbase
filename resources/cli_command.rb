@@ -20,7 +20,13 @@ action :execute do
   params << new_resource.bin unless new_resource.bin.nil?
   params << new_resource.executable unless new_resource.executable.nil?
 
-  output = run_command(*params)
-  raise(output) if result.start_with? 'ERROR'
-  printf("\n%s", )
+
+  ruby_block 'run' do
+      block do
+      output = run_command(*params)
+      raise(output) if output.start_with? 'ERROR'
+      printf("\n%s", output)
+    end
+  end
+  new_resource.updated_by_last_action true
 end
