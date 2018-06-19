@@ -18,7 +18,9 @@ def run_command(command,
 
   command = "'#{bin}/#{executable}' #{command} #{credentials} #{host}"
   Chef::Log.info(command)
-  %x(#{command})
+  out = %x(#{command})
+  Chef::Log.info(out)
+  out
   #raise
 end
 

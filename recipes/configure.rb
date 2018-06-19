@@ -11,6 +11,7 @@ cluster_ram_size = attribute Integer, 'couchbase', 'cluster_ram_size'
 index_ram_size = attribute Integer, 'couchbase', 'index_ram_size'
 fts_ram_size = attribute Integer, 'couchbase', 'fts_ram_size'
 bucket_ram_size = attribute Integer, 'couchbase', 'bucket_ram_size'
+slave = attribute [TrueClass, FalseClass], 'couchbase', 'slave'
 
 user = attribute String, 'couchbase', 'user'
 group =  attribute String, 'couchbase', 'group'
@@ -130,5 +131,75 @@ couchbase_cli_command 'update bucket password' do
   cli_command "bucket-edit --bucket #{bucket_name} --bucket-password '#{bucket_password}'"
   only_if { cli_json.call('bucket-list --output=json').one? { |bucket| bucket['name'] == bucket_name } }
   not_if { cli_json.call('bucket-list --output=json').find { |bucket| bucket['name'] == bucket_name }['saslPassword'] == bucket_password }
+end
+
+if slave
+  master =
+    search(:node, "recipes:*couchbase\\:\\:install* AND chef_environment:#{node.chef_environment} AND NOT couchbase_slave:true",
+           :filter_result => {
+             'hostname' => ['ipaddress'],
+             'port' => ['couchbase', 'port'],
+             'bucket_name' => ['couchbase', 'bucket_name']
+           })
+      .first
+  raise if master.nil?
+  puts master
+
+  cluster_name = 'master'
+  puts 'APAP', master['hostname']
+  hostname = "#{master['hostname']}:#{master['port']}"
+
+  couchbase_cli_command 'create remote cluster' do
+    admin_user admin_user
+    admin_password admin_password
+    cli_command "xdcr-setup --create --xdcr-cluster-name='#{cluster_name}' --xdcr-hostname='#{hostname}' --xdcr-username='#{admin_user}' --xdcr-password='#{admin_password}'"
+    not_if { cli_json.call('xdcr-setup --list --output=json').any? { |cluster| cluster['name'] == cluster_name } }
+  end
+
+  couchbase_cli_command 'edit existing remote cluster' do
+    admin_user admin_user
+    admin_password admin_password
+    cli_command "xdcr-setup --edit --xdcr-cluster-name='#{cluster_name}' --xdcr-hostname='#{hostname}' --xdcr-username='#{admin_user}' --xdcr-password='#{admin_password}'"
+    only_if { cli_json.call('xdcr-setup --list --output=json').any? { |cluster| cluster['name'] == cluster_name } }
+    not_if do
+      set = cli_json.call('xdcr-setup --list --output=json').find { |cluster| cluster['name'] == cluster_name }.select { |key, value| ['hostname', 'name'].include? key }
+      set == {'hostname' => hostname, 'name' => cluster_name}
+    end
+  end
+
+  couchbase_cli_command 'remove replication' do
+    admin_user admin_user
+    admin_password admin_password
+    cli_command "xdcr-replicate --create --xdcr-cluster-name='#{cluster_name}' --xdcr-from-bucket='#{master['bucket_name']}' --xdcr-to-bucket='#{bucket_name}'"
+    not_if do
+      uuid = cli_json.call('xdcr-setup --list --output=json').find { |cluster| cluster['name'] == cluster_name }['uuid']
+      replication =
+        cli_arr.call('xdcr-replicate --list')
+               .slice_before { |s| s.start_with? 'stream' }
+               .map { |arr| arr.map { |l| l.delete ' ' }.map { |l| l.split ':' }.flatten }
+               .map { |arr| Hash[*arr] }
+               .find { |hash| hash['streamid'].start_with? uuid }
+
+      replication.nil? || replication['source'] == master['bucket_name'] && replication['target'].end_with? master['bucket_name']
+    end
+  end
+
+  couchbase_cli_command 'create replication' do
+    admin_user admin_user
+    admin_password admin_password
+    cli_command "xdcr-replicate --create --xdcr-cluster-name='#{cluster_name}' --xdcr-from-bucket='#{master['bucket_name']}' --xdcr-to-bucket='#{bucket_name}'"
+    not_if do
+      uuid = cli_json.call('xdcr-setup --list --output=json').find { |cluster| cluster['name'] == cluster_name }['uuid']
+      replication =
+        cli_arr.call('xdcr-replicate --list')
+               .slice_before { |s| s.start_with? 'stream' }
+               .map { |arr| arr.map { |l| l.delete ' ' }.map { |l| l.split ':' }.flatten }
+               .map { |arr| Hash[*arr] }
+               .find { |hash| hash['streamid'].start_with? uuid }
+
+      !replication.nil?
+    end
+  end
+
 end
 
