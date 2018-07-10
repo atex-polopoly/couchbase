@@ -4,7 +4,7 @@ maintainer_email 'you@example.com'
 license 'All Rights Reserved'
 description 'Installs/Configures couchbase'
 long_description 'Installs/Configures couchbase'
-version '1.0.0'
+version '1.0.1'
 chef_version '>= 12.1' if respond_to?(:chef_version)
 
 depends 'jq'

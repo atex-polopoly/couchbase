@@ -11,7 +11,7 @@ cluster_ram_size = attribute Integer, 'couchbase', 'cluster_ram_size'
 index_ram_size = attribute Integer, 'couchbase', 'index_ram_size'
 fts_ram_size = attribute Integer, 'couchbase', 'fts_ram_size'
 bucket_ram_size = attribute Integer, 'couchbase', 'bucket_ram_size'
-slave = attribute [TrueClass, FalseClass], 'couchbase', 'slave'
+master = attribute [TrueClass, FalseClass], 'couchbase', 'master'
 
 user = attribute String, 'couchbase', 'user'
 group =  attribute String, 'couchbase', 'group'
@@ -133,19 +133,19 @@ couchbase_cli_command 'update bucket password' do
   not_if { cli_json.call('bucket-list --output=json').find { |bucket| bucket['name'] == bucket_name }['saslPassword'] == bucket_password }
 end
 
-if slave
-  master =
-    search(:node, "recipes:*couchbase\\:\\:install* AND chef_environment:#{node.chef_environment} AND NOT couchbase_slave:true",
+if master
+  slave =
+    search(:node, "recipes:*couchbase\\:\\:install* AND chef_environment:#{node.chef_environment} AND NOT couchbase_master:true",
            :filter_result => {
              'hostname' => ['ipaddress'],
              'port' => ['couchbase', 'port'],
              'bucket_name' => ['couchbase', 'bucket_name']
            })
       .first
-  raise if master.nil?
+  raise if slave.nil?
 
-  cluster_name = 'master'
-  hostname = "#{master['hostname']}:#{master['port']}"
+  cluster_name = 'slave'
+  hostname = "#{slave['hostname']}:#{slave['port']}"
 
   couchbase_cli_command 'create remote cluster' do
     admin_user admin_user
@@ -168,7 +168,7 @@ if slave
   couchbase_cli_command 'remove replication' do
     admin_user admin_user
     admin_password admin_password
-    cli_command "xdcr-replicate --create --xdcr-cluster-name='#{cluster_name}' --xdcr-from-bucket='#{master['bucket_name']}' --xdcr-to-bucket='#{bucket_name}'"
+    cli_command "xdcr-replicate --create --xdcr-cluster-name='#{cluster_name}' --xdcr-from-bucket='#{slave['bucket_name']}' --xdcr-to-bucket='#{bucket_name}'"
     not_if do
       uuid = cli_json.call('xdcr-setup --list --output=json').find { |cluster| cluster['name'] == cluster_name }['uuid']
       replication =
