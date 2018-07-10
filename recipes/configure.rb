@@ -177,15 +177,13 @@ if master
                .map { |arr| arr.map { |l| l.delete ' ' }.map { |l| l.split ':' }.flatten }
                .map { |arr| Hash[*arr] }
                .find { |hash| hash['streamid'].start_with? uuid }
-
-
     end
   end
 
   couchbase_cli_command 'create replication' do
     admin_user admin_user
     admin_password admin_password
-    cli_command "xdcr-replicate --create --xdcr-cluster-name='#{cluster_name}' --xdcr-from-bucket='#{master['bucket_name']}' --xdcr-to-bucket='#{bucket_name}'"
+    cli_command "xdcr-replicate --create --xdcr-cluster-name='#{cluster_name}' --xdcr-from-bucket='#{slave['bucket_name']}' --xdcr-to-bucket='#{bucket_name}'"
     not_if do
       uuid = cli_json.call('xdcr-setup --list --output=json').find { |cluster| cluster['name'] == cluster_name }['uuid']
       replication =
