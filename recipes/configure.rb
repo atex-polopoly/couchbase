@@ -43,23 +43,23 @@ directory "#{index_path}" do
   recursive true
 end
 
-service "couchbase-server" do
-  action :stop
-  not_if "grep '{indexer_admin_port, 9106}.' /opt/couchbase/etc/couchbase/static_config"
-  only_if {File.exist? '/opt/couchbase/etc/couchbase/static_config' }
+directory node['couchbase']['log_dir'] do
+  owner user
+  group group
+  mode '755'
 end
 
-file '/opt/couchbase/var/lib/couchbase/config/config.dat' do
-  action :delete
-  not_if "grep '{indexer_admin_port, 9106}.' /opt/couchbase/etc/couchbase/static_config"
-  only_if {File.exist? '/opt/couchbase/etc/couchbase/static_config' }
+template'/opt/couchbase/etc/couchbase/static_config' do
+  source 'static_config.erb'
+  owner user
+  group group
+  mode '0755'
+  variables({
+    log_dir: node['couchbase']['log_dir']
+  })
+  notifies :reload, 'service[couchbase-server]', :delayed
 end
 
-execute 'custom indexer admin port' do
-  command "echo '{indexer_admin_port, 9106}.' >> /opt/couchbase/etc/couchbase/static_config"
-  not_if "grep '{indexer_admin_port, 9106}.' /opt/couchbase/etc/couchbase/static_config"
-  only_if {File.exist? '/opt/couchbase/etc/couchbase/static_config' }
-end
 
 service "couchbase-server" do
   action :start
@@ -80,7 +80,6 @@ couchbase_cli_command 'node init set index path' do
   cli_command "node-init  --node-init-index-path=#{index_path}"
   not_if { cli_json.call('server-info')['storage']['hdd'][0]['index_path'] == index_path }
 end
-
 
 couchbase_cli_command 'cluster init' do
   admin_user admin_user
