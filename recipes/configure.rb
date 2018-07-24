@@ -85,7 +85,7 @@ couchbase_cli_command 'cluster init' do
   admin_user admin_user
   admin_password admin_password
   cli_command "cluster-init --cluster-ramsize #{cluster_ram_size} --cluster-index-ramsize #{index_ram_size} --cluster-fts-ramsize #{fts_ram_size} --services=data,index,query,fts"
-  not_if { cli_arr.call('server-list').find { |ln| ln.include? '127.0.0.1' }.end_with? 'healthy active' }
+  not_if { cli_arr.call('server-list').find { |ln| ln.include?('127.0.0.1') ||  ln.include?("#{node['ipaddress']}") }.end_with? 'healthy active' }
 end
 
 couchbase_cli_command 'update cluster ram' do
