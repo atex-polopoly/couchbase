@@ -132,42 +132,34 @@ couchbase_cli_command 'update bucket password' do
   not_if { cli_json.call('bucket-list --output=json').find { |bucket| bucket['name'] == bucket_name }['saslPassword'] == bucket_password }
 end
 
-if master
-  slave =
-    search(:node, "recipes:*couchbase\\:\\:install* AND chef_environment:#{node.chef_environment} AND NOT couchbase_master:true",
-           :filter_result => {
-             'hostname' => ['ipaddress'],
-             'port' => ['couchbase', 'port'],
-             'bucket_name' => ['couchbase', 'bucket_name']
-           })
-      .first
-  raise if slave.nil?
+slave_url = node['couchbase']['slave_url']
+if master && slave_url
 
+  master_adress = "#{slave_url}:#{node['couchbase']['port']}"
   cluster_name = 'slave'
-  hostname = "#{slave['hostname']}:#{slave['port']}"
 
   couchbase_cli_command 'create remote cluster' do
     admin_user admin_user
     admin_password admin_password
-    cli_command "xdcr-setup --create --xdcr-cluster-name='#{cluster_name}' --xdcr-hostname='#{hostname}' --xdcr-username='#{admin_user}' --xdcr-password='#{admin_password}'"
+    cli_command "xdcr-setup --create --xdcr-cluster-name='#{cluster_name}' --xdcr-hostname='#{master_adress}' --xdcr-username='#{admin_user}' --xdcr-password='#{admin_password}'"
     not_if { cli_json.call('xdcr-setup --list --output=json').any? { |cluster| cluster['name'] == cluster_name } }
   end
 
   couchbase_cli_command 'edit existing remote cluster' do
     admin_user admin_user
     admin_password admin_password
-    cli_command "xdcr-setup --edit --xdcr-cluster-name='#{cluster_name}' --xdcr-hostname='#{hostname}' --xdcr-username='#{admin_user}' --xdcr-password='#{admin_password}'"
+    cli_command "xdcr-setup --edit --xdcr-cluster-name='#{cluster_name}' --xdcr-hostname='#{master_adress}' --xdcr-username='#{admin_user}' --xdcr-password='#{admin_password}'"
     only_if { cli_json.call('xdcr-setup --list --output=json').any? { |cluster| cluster['name'] == cluster_name } }
     not_if do
       set = cli_json.call('xdcr-setup --list --output=json').find { |cluster| cluster['name'] == cluster_name }.select { |key, value| ['hostname', 'name'].include? key }
-      set == {'hostname' => hostname, 'name' => cluster_name}
+      set == {'hostname' => master_adress, 'name' => cluster_name}
     end
   end
 
   couchbase_cli_command 'remove replication' do
     admin_user admin_user
     admin_password admin_password
-    cli_command "xdcr-replicate --create --xdcr-cluster-name='#{cluster_name}' --xdcr-from-bucket='#{slave['bucket_name']}' --xdcr-to-bucket='#{bucket_name}'"
+    cli_command "xdcr-replicate --create --xdcr-cluster-name='#{cluster_name}' --xdcr-from-bucket='#{bucket_name}' --xdcr-to-bucket='#{bucket_name}'"
     not_if do
       uuid = cli_json.call('xdcr-setup --list --output=json').find { |cluster| cluster['name'] == cluster_name }['uuid']
       replication =
@@ -182,7 +174,7 @@ if master
   couchbase_cli_command 'create replication' do
     admin_user admin_user
     admin_password admin_password
-    cli_command "xdcr-replicate --create --xdcr-cluster-name='#{cluster_name}' --xdcr-from-bucket='#{slave['bucket_name']}' --xdcr-to-bucket='#{bucket_name}'"
+    cli_command "xdcr-replicate --create --xdcr-cluster-name='#{cluster_name}' --xdcr-from-bucket='#{bucket_name}' --xdcr-to-bucket='#{bucket_name}'"
     not_if do
       uuid = cli_json.call('xdcr-setup --list --output=json').find { |cluster| cluster['name'] == cluster_name }['uuid']
       replication =
