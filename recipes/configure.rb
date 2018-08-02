@@ -135,24 +135,24 @@ end
 slave_url = node['couchbase']['slave_url']
 if master && slave_url
 
-  master_adress = "#{slave_url}:#{node['couchbase']['port']}"
+  slave_adress = "#{slave_url}:#{node['couchbase']['port']}"
   cluster_name = 'slave'
 
   couchbase_cli_command 'create remote cluster' do
     admin_user admin_user
     admin_password admin_password
-    cli_command "xdcr-setup --create --xdcr-cluster-name='#{cluster_name}' --xdcr-hostname='#{master_adress}' --xdcr-username='#{admin_user}' --xdcr-password='#{admin_password}'"
+    cli_command "xdcr-setup --create --xdcr-cluster-name='#{cluster_name}' --xdcr-hostname='#{slave_adress}' --xdcr-username='#{admin_user}' --xdcr-password='#{admin_password}'"
     not_if { cli_json.call('xdcr-setup --list --output=json').any? { |cluster| cluster['name'] == cluster_name } }
   end
 
   couchbase_cli_command 'edit existing remote cluster' do
     admin_user admin_user
     admin_password admin_password
-    cli_command "xdcr-setup --edit --xdcr-cluster-name='#{cluster_name}' --xdcr-hostname='#{master_adress}' --xdcr-username='#{admin_user}' --xdcr-password='#{admin_password}'"
+    cli_command "xdcr-setup --edit --xdcr-cluster-name='#{cluster_name}' --xdcr-hostname='#{slave_adress}' --xdcr-username='#{admin_user}' --xdcr-password='#{admin_password}'"
     only_if { cli_json.call('xdcr-setup --list --output=json').any? { |cluster| cluster['name'] == cluster_name } }
     not_if do
       set = cli_json.call('xdcr-setup --list --output=json').find { |cluster| cluster['name'] == cluster_name }.select { |key, value| ['hostname', 'name'].include? key }
-      set == {'hostname' => master_adress, 'name' => cluster_name}
+      set == {'hostname' => slave_adress, 'name' => cluster_name}
     end
   end
 
